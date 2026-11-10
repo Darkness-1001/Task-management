@@ -1,0 +1,9 @@
+<%- include('../partials/header') %>
+<section class="error-page">
+  <span>500</span>
+  <h1>Ứng dụng gặp sự cố</h1>
+  <p>Vui lòng thử lại sau ít phút.</p>
+  <% if (error) { %><pre class="error-debug"><%= error.stack %></pre><% } %>
+  <a class="btn btn-primary" href="/">Về trang chính</a>
+</section>
+<%- include('../partials/footer') %>

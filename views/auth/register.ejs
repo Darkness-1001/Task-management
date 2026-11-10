@@ -1,0 +1,28 @@
+<%- include('../partials/header') %>
+<section class="auth-card">
+  <a class="brand auth-brand" href="/"><span>✓</span> TaskFlow</a>
+  <div class="auth-heading">
+    <p class="eyebrow">Bắt đầu miễn phí</p>
+    <h1>Tạo tài khoản</h1>
+    <p>Sắp xếp công việc rõ ràng hơn mỗi ngày.</p>
+  </div>
+  <%- include('../partials/errors') %>
+  <form method="POST" action="/register" class="form-stack">
+    <label>Họ và tên
+      <input type="text" name="name" value="<%= values.name || '' %>" minlength="2" maxlength="100" autocomplete="name" required autofocus>
+    </label>
+    <label>Email
+      <input type="email" name="email" value="<%= values.email || '' %>" autocomplete="email" required>
+    </label>
+    <label>Mật khẩu
+      <input type="password" name="password" minlength="8" autocomplete="new-password" required>
+      <small>Tối thiểu 8 ký tự</small>
+    </label>
+    <label>Xác nhận mật khẩu
+      <input type="password" name="confirmPassword" minlength="8" autocomplete="new-password" required>
+    </label>
+    <button class="btn btn-primary btn-block" type="submit">Tạo tài khoản</button>
+  </form>
+  <p class="auth-switch">Đã có tài khoản? <a href="/login">Đăng nhập</a></p>
+</section>
+<%- include('../partials/footer') %>

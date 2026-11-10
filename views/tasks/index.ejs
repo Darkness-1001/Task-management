@@ -1,0 +1,77 @@
+<%- include('../partials/header') %>
+<div class="page-heading">
+  <div>
+    <p class="eyebrow">Tổng quan</p>
+    <h1>Công việc của tôi</h1>
+    <p>Theo dõi tiến độ và hoàn thành đúng hạn.</p>
+  </div>
+  <a href="/tasks/new" class="btn btn-primary">＋ Tạo công việc</a>
+</div>
+
+<section class="stats-grid" aria-label="Thống kê công việc">
+  <article class="stat-card"><span>Tổng cộng</span><strong><%= stats.total %></strong></article>
+  <article class="stat-card stat-todo"><span>Chưa làm</span><strong><%= stats.todo %></strong></article>
+  <article class="stat-card stat-progress"><span>Đang làm</span><strong><%= stats.in_progress %></strong></article>
+  <article class="stat-card stat-completed"><span>Hoàn thành</span><strong><%= stats.completed %></strong></article>
+  <article class="stat-card stat-overdue"><span>Quá hạn</span><strong><%= stats.overdue %></strong></article>
+</section>
+
+<form class="filter-bar" method="GET" action="/tasks">
+  <input type="search" name="search" value="<%= filters.search %>" placeholder="Tìm theo tiêu đề hoặc mô tả..." aria-label="Tìm kiếm">
+  <select name="status" aria-label="Lọc trạng thái">
+    <option value="">Mọi trạng thái</option>
+    <option value="TODO" <%= filters.status === 'TODO' ? 'selected' : '' %>>Chưa làm</option>
+    <option value="IN_PROGRESS" <%= filters.status === 'IN_PROGRESS' ? 'selected' : '' %>>Đang làm</option>
+    <option value="COMPLETED" <%= filters.status === 'COMPLETED' ? 'selected' : '' %>>Hoàn thành</option>
+  </select>
+  <select name="priority" aria-label="Lọc ưu tiên">
+    <option value="">Mọi mức ưu tiên</option>
+    <option value="HIGH" <%= filters.priority === 'HIGH' ? 'selected' : '' %>>Cao</option>
+    <option value="MEDIUM" <%= filters.priority === 'MEDIUM' ? 'selected' : '' %>>Trung bình</option>
+    <option value="LOW" <%= filters.priority === 'LOW' ? 'selected' : '' %>>Thấp</option>
+  </select>
+  <button class="btn btn-secondary" type="submit">Lọc</button>
+  <% if (filters.search || filters.status || filters.priority) { %>
+    <a class="btn btn-ghost" href="/tasks">Xóa lọc</a>
+  <% } %>
+</form>
+
+<section class="task-list">
+  <% if (!tasks.length) { %>
+    <div class="empty-state">
+      <div class="empty-icon">✓</div>
+      <h2>Chưa có công việc phù hợp</h2>
+      <p>Tạo công việc đầu tiên hoặc thay đổi điều kiện tìm kiếm.</p>
+      <a href="/tasks/new" class="btn btn-primary">Tạo công việc</a>
+    </div>
+  <% } %>
+
+  <% tasks.forEach(task => { %>
+    <article class="task-card <%= task.status === 'COMPLETED' ? 'task-done' : '' %>">
+      <div class="task-main">
+        <div class="task-badges">
+          <span class="badge status-<%= task.status.toLowerCase() %>">
+            <%= task.status === 'TODO' ? 'Chưa làm' : task.status === 'IN_PROGRESS' ? 'Đang làm' : 'Hoàn thành' %>
+          </span>
+          <span class="badge priority-<%= task.priority.toLowerCase() %>">
+            Ưu tiên <%= task.priority === 'HIGH' ? 'cao' : task.priority === 'MEDIUM' ? 'trung bình' : 'thấp' %>
+          </span>
+          <% if (task.is_overdue) { %><span class="badge overdue">Quá hạn</span><% } %>
+        </div>
+        <h2><a href="/tasks/<%= task.id %>"><%= task.title %></a></h2>
+        <% if (task.description) { %><p><%= task.description.length > 150 ? task.description.slice(0, 150) + '…' : task.description %></p><% } %>
+        <span class="due-date"><%= task.due_date ? `Hạn: ${task.due_date.split('-').reverse().join('/')}` : 'Không có hạn' %></span>
+      </div>
+      <div class="task-actions">
+        <% if (task.status !== 'COMPLETED') { %>
+          <form method="POST" action="/tasks/<%= task.id %>/status?_method=PATCH">
+            <input type="hidden" name="status" value="<%= task.status === 'TODO' ? 'IN_PROGRESS' : 'COMPLETED' %>">
+            <button type="submit" class="btn btn-small btn-secondary"><%= task.status === 'TODO' ? 'Bắt đầu' : 'Hoàn thành' %></button>
+          </form>
+        <% } %>
+        <a href="/tasks/<%= task.id %>/edit" class="btn btn-small btn-ghost">Sửa</a>
+      </div>
+    </article>
+  <% }) %>
+</section>
+<%- include('../partials/footer') %>

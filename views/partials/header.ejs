@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Ứng dụng quản lý công việc cá nhân">
+  <title><%= title %> | TaskFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <% if (currentUser) { %>
+    <header class="navbar">
+      <div class="container nav-content">
+        <a class="brand" href="/tasks"><span>✓</span> TaskFlow</a>
+        <nav>
+          <span class="user-name">Xin chào, <strong><%= currentUser.name %></strong></span>
+          <a href="/tasks">Công việc</a>
+          <form method="POST" action="/logout" class="inline-form">
+            <button type="submit" class="link-button">Đăng xuất</button>
+          </form>
+        </nav>
+      </div>
+    </header>
+  <% } %>
+  <main class="<%= currentUser ? 'container page' : 'auth-page' %>">
+    <%- include('flash') %>

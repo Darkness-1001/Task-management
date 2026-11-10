@@ -1,0 +1,25 @@
+{
+  "name": "task-management",
+  "version": "1.0.0",
+  "description": "Ứng dụng quản lý công việc cá nhân với Node.js và PostgreSQL",
+  "main": "src/app.js",
+  "scripts": {
+    "dev": "node --watch src/app.js",
+    "start": "node src/app.js",
+    "db:init": "node src/db/init.js",
+    "test": "node tests/smoke.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "connect-pg-simple": "^10.0.0",
+    "dotenv": "^17.2.3",
+    "ejs": "^3.1.10",
+    "express": "^5.1.0",
+    "express-session": "^1.18.2",
+    "method-override": "^3.0.0",
+    "pg": "^8.16.3"
+  }
+}

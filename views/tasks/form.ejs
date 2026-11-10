@@ -1,0 +1,43 @@
+<%- include('../partials/header') %>
+<div class="narrow-page">
+  <a class="back-link" href="/tasks">← Quay lại danh sách</a>
+  <div class="panel">
+    <div class="panel-heading">
+      <p class="eyebrow"><%= method === 'POST' ? 'Công việc mới' : 'Cập nhật' %></p>
+      <h1><%= title %></h1>
+    </div>
+    <%- include('../partials/errors') %>
+    <form method="POST" action="<%= formAction %><%= method !== 'POST' ? '?_method=' + method : '' %>" class="form-stack">
+      <label>Tiêu đề <span class="required">*</span>
+        <input type="text" name="title" value="<%= task.title || '' %>" maxlength="200" placeholder="Ví dụ: Hoàn thành báo cáo môn học" required autofocus>
+      </label>
+      <label>Mô tả
+        <textarea name="description" rows="6" placeholder="Ghi chú chi tiết cho công việc..."><%= task.description || '' %></textarea>
+      </label>
+      <div class="form-row">
+        <label>Trạng thái
+          <select name="status">
+            <option value="TODO" <%= !task.status || task.status === 'TODO' ? 'selected' : '' %>>Chưa làm</option>
+            <option value="IN_PROGRESS" <%= task.status === 'IN_PROGRESS' ? 'selected' : '' %>>Đang làm</option>
+            <option value="COMPLETED" <%= task.status === 'COMPLETED' ? 'selected' : '' %>>Hoàn thành</option>
+          </select>
+        </label>
+        <label>Mức ưu tiên
+          <select name="priority">
+            <option value="LOW" <%= task.priority === 'LOW' ? 'selected' : '' %>>Thấp</option>
+            <option value="MEDIUM" <%= !task.priority || task.priority === 'MEDIUM' ? 'selected' : '' %>>Trung bình</option>
+            <option value="HIGH" <%= task.priority === 'HIGH' ? 'selected' : '' %>>Cao</option>
+          </select>
+        </label>
+      </div>
+      <label>Ngày hết hạn
+        <input type="date" name="dueDate" value="<%= task.dueDate || task.due_date || '' %>">
+      </label>
+      <div class="form-actions">
+        <a class="btn btn-ghost" href="/tasks">Hủy</a>
+        <button class="btn btn-primary" type="submit"><%= method === 'POST' ? 'Tạo công việc' : 'Lưu thay đổi' %></button>
+      </div>
+    </form>
+  </div>
+</div>
+<%- include('../partials/footer') %>

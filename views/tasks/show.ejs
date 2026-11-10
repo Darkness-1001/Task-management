@@ -1,0 +1,32 @@
+<%- include('../partials/header') %>
+<div class="narrow-page">
+  <a class="back-link" href="/tasks">← Quay lại danh sách</a>
+  <article class="panel task-detail">
+    <div class="detail-header">
+      <div>
+        <div class="task-badges">
+          <span class="badge status-<%= task.status.toLowerCase() %>"><%= task.status === 'TODO' ? 'Chưa làm' : task.status === 'IN_PROGRESS' ? 'Đang làm' : 'Hoàn thành' %></span>
+          <span class="badge priority-<%= task.priority.toLowerCase() %>">Ưu tiên <%= task.priority === 'HIGH' ? 'cao' : task.priority === 'MEDIUM' ? 'trung bình' : 'thấp' %></span>
+        </div>
+        <h1><%= task.title %></h1>
+      </div>
+      <a href="/tasks/<%= task.id %>/edit" class="btn btn-secondary">Chỉnh sửa</a>
+    </div>
+    <div class="detail-grid">
+      <div><span>Ngày hết hạn</span><strong><%= task.due_date ? task.due_date.split('-').reverse().join('/') : 'Không có' %></strong></div>
+      <div><span>Ngày tạo</span><strong><%= new Date(task.created_at).toLocaleDateString('vi-VN') %></strong></div>
+      <div><span>Cập nhật</span><strong><%= new Date(task.updated_at).toLocaleDateString('vi-VN') %></strong></div>
+    </div>
+    <section class="description">
+      <h2>Mô tả</h2>
+      <p><%= task.description || 'Chưa có mô tả cho công việc này.' %></p>
+    </section>
+    <div class="danger-zone">
+      <div><strong>Xóa công việc</strong><p>Hành động này không thể hoàn tác.</p></div>
+      <form method="POST" action="/tasks/<%= task.id %>?_method=DELETE" onsubmit="return confirm('Bạn chắc chắn muốn xóa công việc này?')">
+        <button class="btn btn-danger" type="submit">Xóa</button>
+      </form>
+    </div>
+  </article>
+</div>
+<%- include('../partials/footer') %>
