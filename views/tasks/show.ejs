@@ -1,32 +1,70 @@
 <%- include('../partials/header') %>
-<div class="narrow-page">
-  <a class="back-link" href="/tasks">← Quay lại danh sách</a>
-  <article class="panel task-detail">
-    <div class="detail-header">
-      <div>
-        <div class="task-badges">
-          <span class="badge status-<%= task.status.toLowerCase() %>"><%= task.status === 'TODO' ? 'Chưa làm' : task.status === 'IN_PROGRESS' ? 'Đang làm' : 'Hoàn thành' %></span>
-          <span class="badge priority-<%= task.priority.toLowerCase() %>">Ưu tiên <%= task.priority === 'HIGH' ? 'cao' : task.priority === 'MEDIUM' ? 'trung bình' : 'thấp' %></span>
-        </div>
-        <h1><%= task.title %></h1>
-      </div>
-      <a href="/tasks/<%= task.id %>/edit" class="btn btn-secondary">Chỉnh sửa</a>
+<nav class="breadcrumbs" aria-label="Đường dẫn">
+  <a href="/tasks">Dự án</a><span>/</span><a href="/tasks">TaskFlow</a><span>/</span>
+  <span class="breadcrumb-key"><span class="issue-type" aria-hidden="true">✓</span><%= taskKey(task.id) %></span>
+</nav>
+
+<div class="issue">
+  <article class="issue-main">
+    <h1 class="issue-title"><%= task.title %></h1>
+    <div class="issue-actions">
+      <a href="/tasks/<%= task.id %>/edit" class="btn btn-subtle">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/></svg> Chỉnh sửa
+      </a>
+      <a href="/tasks" class="btn btn-subtle">← Về bảng</a>
     </div>
-    <div class="detail-grid">
-      <div><span>Ngày hết hạn</span><strong><%= task.due_date ? task.due_date.split('-').reverse().join('/') : 'Không có' %></strong></div>
-      <div><span>Ngày tạo</span><strong><%= new Date(task.created_at).toLocaleDateString('vi-VN') %></strong></div>
-      <div><span>Cập nhật</span><strong><%= new Date(task.updated_at).toLocaleDateString('vi-VN') %></strong></div>
-    </div>
-    <section class="description">
+
+    <section class="issue-section">
       <h2>Mô tả</h2>
-      <p><%= task.description || 'Chưa có mô tả cho công việc này.' %></p>
+      <% if (task.description) { %>
+        <p class="issue-description"><%= task.description %></p>
+      <% } else { %>
+        <p class="muted">Chưa có mô tả cho công việc này.</p>
+      <% } %>
     </section>
-    <div class="danger-zone">
-      <div><strong>Xóa công việc</strong><p>Hành động này không thể hoàn tác.</p></div>
-      <form method="POST" action="/tasks/<%= task.id %>?_method=DELETE" onsubmit="return confirm('Bạn chắc chắn muốn xóa công việc này?')">
+
+    <section class="issue-section danger-zone">
+      <div>
+        <h2>Xóa công việc</h2>
+        <p class="muted">Hành động này không thể hoàn tác.</p>
+      </div>
+      <form method="POST" action="/tasks/<%= task.id %>?_method=DELETE" onsubmit="return confirm('Bạn chắc chắn muốn xóa <%= taskKey(task.id) %>?')">
         <button class="btn btn-danger" type="submit">Xóa</button>
       </form>
-    </div>
+    </section>
   </article>
+
+  <aside class="issue-side">
+    <form method="POST" action="/tasks/<%= task.id %>/status?_method=PATCH" class="status-form">
+      <input type="hidden" name="redirectTo" value="/tasks/<%= task.id %>">
+      <label class="sr-only" for="status-select">Trạng thái</label>
+      <select id="status-select" name="status" class="lozenge-select lozenge-lg lozenge-<%= task.status.toLowerCase() %>" data-autosubmit>
+        <% Object.entries(STATUS_LABELS).forEach(([key, label]) => { %>
+          <option value="<%= key %>" <%= task.status === key ? 'selected' : '' %>><%= label %></option>
+        <% }) %>
+      </select>
+      <noscript><button class="btn btn-subtle btn-small" type="submit">Lưu</button></noscript>
+    </form>
+
+    <section class="details">
+      <h2>Chi tiết</h2>
+      <dl>
+        <dt>Người thực hiện</dt>
+        <dd><span class="avatar avatar-sm"><%= initials(currentUser.name) %></span> <%= currentUser.name %></dd>
+        <dt>Ưu tiên</dt>
+        <dd><%- include('../partials/priority', { priority: task.priority, showLabel: true }) %></dd>
+        <dt>Ngày hết hạn</dt>
+        <dd>
+          <% if (task.due_date) { %>
+            <span class="due <%= task.due_date < new Date().toISOString().slice(0, 10) && task.status !== 'COMPLETED' ? 'is-overdue' : '' %>"><%= formatDate(task.due_date) %></span>
+          <% } else { %><span class="muted">Không có</span><% } %>
+        </dd>
+      </dl>
+    </section>
+    <p class="timestamps">
+      Tạo lúc <%= new Date(task.created_at).toLocaleString('vi-VN') %><br>
+      Cập nhật <%= new Date(task.updated_at).toLocaleString('vi-VN') %>
+    </p>
+  </aside>
 </div>
 <%- include('../partials/footer') %>

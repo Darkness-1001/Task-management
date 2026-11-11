@@ -13,6 +13,8 @@
 - Dashboard thống kê và đánh dấu công việc quá hạn.
 - Phân quyền: người dùng chỉ truy cập được công việc của mình.
 - Session được lưu trong PostgreSQL.
+- Giao diện kiểu bảng Kanban: kéo thả thẻ giữa các cột để đổi trạng thái; có thêm chế độ xem Danh sách.
+- Giao diện Sáng/Tối (Light/Dark): mặc định theo hệ điều hành, nhớ lựa chọn của người dùng.
 
 ## Yêu cầu
 
@@ -93,4 +95,8 @@ public/css/         # CSS
 
 ## Triển khai Render
 
-Dự án có sẵn `render.yaml` để tạo đồng thời Web Service và PostgreSQL trên Render. Xem hướng dẫn từng bước tại [docs/DEPLOY_RENDER.md](docs/DEPLOY_RENDER.md).
+Hướng dẫn từng bước đưa website lên Render và kết nối PostgreSQL nằm tại [docs/DEPLOY_RENDER.md](docs/DEPLOY_RENDER.md), gồm:
+
+- Cách A: tạo PostgreSQL và Web Service thủ công trên Render Dashboard.
+- Cách B: dùng Blueprint `render.yaml` có sẵn để tạo cả hai tự động.
+- Kết nối pgAdmin/psql tới database trên Render và chạy kiểm thử trên website đã deploy.

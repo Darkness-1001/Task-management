@@ -8,6 +8,14 @@ const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH'];
 
 router.use(requireAuth);
 
+// Id không phải số nguyên dương (vd: /tasks/abc) → 404 thay vì lỗi 500 từ PostgreSQL.
+router.param('id', (req, res, next, id) => {
+  if (!/^\d{1,9}$/.test(id) || Number(id) < 1) {
+    return res.status(404).render('errors/404', { title: 'Không tìm thấy' });
+  }
+  return next();
+});
+
 function cleanTask(body) {
   return {
     title: String(body.title || '').trim(),
@@ -18,12 +26,19 @@ function cleanTask(body) {
   };
 }
 
+// Kiểm tra cả định dạng YYYY-MM-DD lẫn ngày có thật (loại 2026-02-31).
+function isValidDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
 function validateTask(task) {
   const errors = [];
   if (!task.title || task.title.length > 200) errors.push('Tiêu đề là bắt buộc và không quá 200 ký tự.');
   if (!STATUSES.includes(task.status)) errors.push('Trạng thái không hợp lệ.');
   if (!PRIORITIES.includes(task.priority)) errors.push('Mức ưu tiên không hợp lệ.');
-  if (task.dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(task.dueDate)) errors.push('Ngày hết hạn không hợp lệ.');
+  if (task.dueDate && !isValidDate(task.dueDate)) errors.push('Ngày hết hạn không hợp lệ.');
   return errors;
 }
 
@@ -42,6 +57,7 @@ router.get('/', async (req, res, next) => {
   const search = String(req.query.search || '').trim();
   const status = STATUSES.includes(req.query.status) ? req.query.status : '';
   const priority = PRIORITIES.includes(req.query.priority) ? req.query.priority : '';
+  const view = req.query.view === 'list' ? 'list' : 'board';
   const values = [req.session.user.id];
   const conditions = ['user_id = $1'];
 
@@ -63,7 +79,9 @@ router.get('/', async (req, res, next) => {
       pool.query(
         `SELECT id, title, description, status, priority,
                 TO_CHAR(due_date, 'YYYY-MM-DD') AS due_date,
-                (due_date < CURRENT_DATE AND status <> 'COMPLETED') AS is_overdue
+                (due_date < CURRENT_DATE AND status <> 'COMPLETED') AS is_overdue,
+                COALESCE(due_date < CURRENT_DATE, false) AS is_past_due,
+                updated_at
          FROM tasks
          WHERE ${conditions.join(' AND ')}
          ORDER BY
@@ -83,9 +101,17 @@ router.get('/', async (req, res, next) => {
       ),
     ]);
 
+    const tasks = tasksResult.rows;
+    const columns = STATUSES.map((key) => ({
+      key,
+      tasks: tasks.filter((task) => task.status === key),
+    }));
+
     res.render('tasks/index', {
       title: 'Công việc của tôi',
-      tasks: tasksResult.rows,
+      tasks,
+      columns,
+      view,
       stats: statsResult.rows[0],
       filters: { search, status, priority },
     });
@@ -172,19 +198,34 @@ router.put('/:id', async (req, res, next) => {
   }
 });
 
+// Chỉ cho phép quay về đường dẫn nội bộ thuộc /tasks (tránh open redirect).
+function safeRedirect(value) {
+  const target = String(value || '');
+  return /^\/tasks(?:[/?]|$)/.test(target) ? target : '/tasks';
+}
+
 router.patch('/:id/status', async (req, res, next) => {
   const status = String(req.body.status || '');
+  const wantsJson = req.accepts(['html', 'json']) === 'json';
+  const redirectTo = safeRedirect(req.body.redirectTo);
+
   if (!STATUSES.includes(status)) {
+    if (wantsJson) return res.status(422).json({ ok: false, message: 'Trạng thái không hợp lệ.' });
     req.session.flash = { type: 'danger', message: 'Trạng thái không hợp lệ.' };
-    return res.redirect('/tasks');
+    return res.redirect(redirectTo);
   }
   try {
-    await pool.query(
+    const result = await pool.query(
       `UPDATE tasks SET status = $1, updated_at = NOW()
        WHERE id = $2 AND user_id = $3`,
       [status, req.params.id, req.session.user.id],
     );
-    return res.redirect('/tasks');
+    if (wantsJson) {
+      return result.rowCount
+        ? res.json({ ok: true, status })
+        : res.status(404).json({ ok: false, message: 'Không tìm thấy công việc.' });
+    }
+    return res.redirect(redirectTo);
   } catch (error) {
     return next(error);
   }

@@ -5,25 +5,103 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Ứng dụng quản lý công việc cá nhân">
   <title><%= title %> | TaskFlow</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    // Áp dụng theme trước khi vẽ trang để không bị nháy sáng/tối.
+    (function () {
+      var theme;
+      try { theme = localStorage.getItem('taskflow-theme'); } catch (e) {}
+      if (theme !== 'light' && theme !== 'dark') {
+        theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
   <link rel="stylesheet" href="/css/style.css">
+  <script src="/js/app.js" defer></script>
 </head>
-<body>
-  <% if (currentUser) { %>
-    <header class="navbar">
-      <div class="container nav-content">
-        <a class="brand" href="/tasks"><span>✓</span> TaskFlow</a>
-        <nav>
-          <span class="user-name">Xin chào, <strong><%= currentUser.name %></strong></span>
-          <a href="/tasks">Công việc</a>
-          <form method="POST" action="/logout" class="inline-form">
-            <button type="submit" class="link-button">Đăng xuất</button>
+<body class="<%= currentUser ? 'app-body' : 'auth-body' %>">
+<% if (currentUser) { %>
+  <header class="topnav">
+    <button type="button" class="icon-btn sidebar-toggle" data-sidebar-toggle aria-label="Mở menu điều hướng" aria-expanded="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+    <a class="brand" href="/tasks">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M5 12.5l4.2 4.2L19 7"/></svg>
+      </span>
+      <span class="brand-name">TaskFlow</span>
+    </a>
+    <a class="btn btn-primary btn-create" href="/tasks/new">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      <span>Tạo</span>
+    </a>
+    <form class="topnav-search" method="GET" action="/tasks" role="search">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>
+      <input type="search" name="search" placeholder="Tìm kiếm" aria-label="Tìm kiếm công việc"
+             value="<%= currentPath === '/tasks' ? (currentQuery.search || '') : '' %>">
+      <% if (currentQuery.view === 'list') { %><input type="hidden" name="view" value="list"><% } %>
+    </form>
+    <div class="topnav-right">
+      <button type="button" class="icon-btn theme-toggle" data-theme-toggle aria-label="Đổi giao diện sáng/tối" title="Đổi giao diện sáng/tối">
+        <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
+      </button>
+      <div class="user-menu">
+        <button type="button" class="avatar avatar-btn" data-menu-toggle aria-haspopup="true" aria-expanded="false" aria-label="Tài khoản của <%= currentUser.name %>">
+          <%= initials(currentUser.name) %>
+        </button>
+        <div class="dropdown" data-menu hidden>
+          <div class="dropdown-header">
+            <span class="avatar avatar-lg"><%= initials(currentUser.name) %></span>
+            <div>
+              <strong><%= currentUser.name %></strong>
+              <span><%= currentUser.email %></span>
+            </div>
+          </div>
+          <form method="POST" action="/logout">
+            <button type="submit" class="dropdown-item">Đăng xuất</button>
           </form>
-        </nav>
+        </div>
       </div>
-    </header>
-  <% } %>
-  <main class="<%= currentUser ? 'container page' : 'auth-page' %>">
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" data-sidebar>
+      <div class="project">
+        <span class="project-icon" aria-hidden="true">TF</span>
+        <div>
+          <strong>TaskFlow</strong>
+          <span>Dự án cá nhân</span>
+        </div>
+      </div>
+      <% const onTasks = currentPath === '/tasks'; %>
+      <nav class="side-nav" aria-label="Điều hướng dự án">
+        <p class="side-nav-title">Lập kế hoạch</p>
+        <a href="/tasks" class="<%= onTasks && currentQuery.view !== 'list' ? 'active' : '' %>">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4" width="5" height="16" rx="1.5"/><rect x="9.5" y="4" width="5" height="11" rx="1.5"/><rect x="15.5" y="4" width="5" height="7" rx="1.5"/></svg>
+          Bảng công việc
+        </a>
+        <a href="/tasks?view=list" class="<%= onTasks && currentQuery.view === 'list' ? 'active' : '' %>">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></svg>
+          Danh sách
+        </a>
+        <a href="/tasks/new" class="<%= currentPath === '/tasks/new' ? 'active' : '' %>">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8.5v7M8.5 12h7"/></svg>
+          Tạo công việc
+        </a>
+      </nav>
+      <p class="sidebar-foot">Node.js · PostgreSQL · Render</p>
+    </aside>
+    <div class="sidebar-backdrop" data-sidebar-backdrop hidden></div>
+
+    <main class="content" id="main">
+      <%- include('flash') %>
+<% } else { %>
+  <button type="button" class="icon-btn theme-toggle theme-toggle-floating" data-theme-toggle aria-label="Đổi giao diện sáng/tối" title="Đổi giao diện sáng/tối">
+    <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
+  </button>
+  <main class="auth-page" id="main">
     <%- include('flash') %>
+<% } %>

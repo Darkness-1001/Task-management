@@ -1,0 +1,8 @@
+<span class="priority priority-<%= priority.toLowerCase() %>" title="Ưu tiên: <%= PRIORITY_LABELS[priority] %>">
+  <svg viewBox="0 0 16 16" aria-hidden="true">
+    <% if (priority === 'HIGH') { %><path d="M3.5 9.5L8 5l4.5 4.5M3.5 13L8 8.5l4.5 4.5"/>
+    <% } else if (priority === 'MEDIUM') { %><path d="M3 6h10M3 10h10"/>
+    <% } else { %><path d="M3.5 3L8 7.5 12.5 3M3.5 6.5L8 11l4.5-4.5"/><% } %>
+  </svg>
+  <% if (typeof showLabel !== 'undefined' && showLabel) { %><span><%= PRIORITY_LABELS[priority] %></span><% } %>
+</span>

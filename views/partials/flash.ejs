@@ -1,3 +1,7 @@
 <% if (flash) { %>
-  <div class="alert alert-<%= flash.type %>" role="alert"><%= flash.message %></div>
+  <div class="flag flag-<%= flash.type %>" role="status" data-flag>
+    <span class="flag-icon" aria-hidden="true"><%= flash.type === 'success' ? '✓' : '!' %></span>
+    <p><%= flash.message %></p>
+    <button type="button" class="flag-close" data-flag-close aria-label="Đóng thông báo">×</button>
+  </div>
 <% } %>

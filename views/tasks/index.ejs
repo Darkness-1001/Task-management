@@ -1,77 +1,177 @@
 <%- include('../partials/header') %>
-<div class="page-heading">
-  <div>
-    <p class="eyebrow">Tổng quan</p>
-    <h1>Công việc của tôi</h1>
-    <p>Theo dõi tiến độ và hoàn thành đúng hạn.</p>
+<%
+  const hasFilter = filters.search || filters.status || filters.priority;
+  const query = (extra) => {
+    const params = new URLSearchParams();
+    if (filters.search) params.set('search', filters.search);
+    if (filters.status) params.set('status', filters.status);
+    if (filters.priority) params.set('priority', filters.priority);
+    Object.entries(extra).forEach(([k, v]) => (v ? params.set(k, v) : params.delete(k)));
+    const s = params.toString();
+    return '/tasks' + (s ? '?' + s : '');
+  };
+  const backUrl = query({ view: view === 'list' ? 'list' : '' });
+%>
+
+<nav class="breadcrumbs" aria-label="Đường dẫn">
+  <a href="/tasks">Dự án</a><span>/</span><a href="/tasks">TaskFlow</a>
+</nav>
+
+<div class="page-header">
+  <h1>Công việc của tôi</h1>
+  <div class="view-switch" role="tablist" aria-label="Chế độ xem">
+    <a role="tab" href="<%= query({ view: '' }) %>" class="<%= view === 'board' ? 'active' : '' %>" aria-selected="<%= view === 'board' %>">Bảng</a>
+    <a role="tab" href="<%= query({ view: 'list' }) %>" class="<%= view === 'list' ? 'active' : '' %>" aria-selected="<%= view === 'list' %>">Danh sách</a>
   </div>
-  <a href="/tasks/new" class="btn btn-primary">＋ Tạo công việc</a>
 </div>
 
-<section class="stats-grid" aria-label="Thống kê công việc">
-  <article class="stat-card"><span>Tổng cộng</span><strong><%= stats.total %></strong></article>
-  <article class="stat-card stat-todo"><span>Chưa làm</span><strong><%= stats.todo %></strong></article>
-  <article class="stat-card stat-progress"><span>Đang làm</span><strong><%= stats.in_progress %></strong></article>
-  <article class="stat-card stat-completed"><span>Hoàn thành</span><strong><%= stats.completed %></strong></article>
-  <article class="stat-card stat-overdue"><span>Quá hạn</span><strong><%= stats.overdue %></strong></article>
+<section class="summary" aria-label="Thống kê công việc">
+  <div class="summary-item"><span>Tổng cộng</span><strong><%= stats.total %></strong></div>
+  <div class="summary-item"><span class="dot dot-todo"></span><span>Chưa làm</span><strong><%= stats.todo %></strong></div>
+  <div class="summary-item"><span class="dot dot-progress"></span><span>Đang làm</span><strong><%= stats.in_progress %></strong></div>
+  <div class="summary-item"><span class="dot dot-done"></span><span>Hoàn thành</span><strong><%= stats.completed %></strong></div>
+  <div class="summary-item <%= stats.overdue ? 'summary-danger' : '' %>"><span class="dot dot-overdue"></span><span>Quá hạn</span><strong><%= stats.overdue %></strong></div>
+  <% if (stats.total) { %>
+    <div class="progress" title="<%= Math.round(stats.completed / stats.total * 100) %>% hoàn thành">
+      <div class="progress-bar" style="width: <%= Math.round(stats.completed / stats.total * 100) %>%"></div>
+    </div>
+  <% } %>
 </section>
 
-<form class="filter-bar" method="GET" action="/tasks">
-  <input type="search" name="search" value="<%= filters.search %>" placeholder="Tìm theo tiêu đề hoặc mô tả..." aria-label="Tìm kiếm">
-  <select name="status" aria-label="Lọc trạng thái">
-    <option value="">Mọi trạng thái</option>
-    <option value="TODO" <%= filters.status === 'TODO' ? 'selected' : '' %>>Chưa làm</option>
-    <option value="IN_PROGRESS" <%= filters.status === 'IN_PROGRESS' ? 'selected' : '' %>>Đang làm</option>
-    <option value="COMPLETED" <%= filters.status === 'COMPLETED' ? 'selected' : '' %>>Hoàn thành</option>
+<form class="toolbar" method="GET" action="/tasks">
+  <% if (view === 'list') { %><input type="hidden" name="view" value="list"><% } %>
+  <div class="input-icon">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>
+    <input type="search" name="search" value="<%= filters.search %>" placeholder="Tìm trong bảng" aria-label="Tìm kiếm">
+  </div>
+  <select name="status" aria-label="Lọc trạng thái" data-autosubmit>
+    <option value="">Trạng thái</option>
+    <% Object.entries(STATUS_LABELS).forEach(([key, label]) => { %>
+      <option value="<%= key %>" <%= filters.status === key ? 'selected' : '' %>><%= label %></option>
+    <% }) %>
   </select>
-  <select name="priority" aria-label="Lọc ưu tiên">
-    <option value="">Mọi mức ưu tiên</option>
-    <option value="HIGH" <%= filters.priority === 'HIGH' ? 'selected' : '' %>>Cao</option>
-    <option value="MEDIUM" <%= filters.priority === 'MEDIUM' ? 'selected' : '' %>>Trung bình</option>
-    <option value="LOW" <%= filters.priority === 'LOW' ? 'selected' : '' %>>Thấp</option>
+  <select name="priority" aria-label="Lọc ưu tiên" data-autosubmit>
+    <option value="">Ưu tiên</option>
+    <% Object.entries(PRIORITY_LABELS).forEach(([key, label]) => { %>
+      <option value="<%= key %>" <%= filters.priority === key ? 'selected' : '' %>><%= label %></option>
+    <% }) %>
   </select>
-  <button class="btn btn-secondary" type="submit">Lọc</button>
-  <% if (filters.search || filters.status || filters.priority) { %>
-    <a class="btn btn-ghost" href="/tasks">Xóa lọc</a>
+  <button class="btn btn-subtle" type="submit">Lọc</button>
+  <% if (hasFilter) { %>
+    <a class="btn btn-link" href="<%= view === 'list' ? '/tasks?view=list' : '/tasks' %>">Xóa bộ lọc</a>
   <% } %>
 </form>
 
-<section class="task-list">
+<% if (!stats.total) { %>
+  <div class="empty-state">
+    <div class="empty-art" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><rect x="3.5" y="4" width="5" height="16" rx="1.5"/><rect x="9.5" y="4" width="5" height="11" rx="1.5"/><rect x="15.5" y="4" width="5" height="7" rx="1.5"/></svg>
+    </div>
+    <h2>Bảng của bạn đang trống</h2>
+    <p>Tạo công việc đầu tiên để bắt đầu theo dõi tiến độ.</p>
+    <a href="/tasks/new" class="btn btn-primary">Tạo công việc</a>
+  </div>
+<% } else if (view === 'list') { %>
   <% if (!tasks.length) { %>
-    <div class="empty-state">
-      <div class="empty-icon">✓</div>
-      <h2>Chưa có công việc phù hợp</h2>
-      <p>Tạo công việc đầu tiên hoặc thay đổi điều kiện tìm kiếm.</p>
-      <a href="/tasks/new" class="btn btn-primary">Tạo công việc</a>
+    <div class="empty-state empty-compact">
+      <h2>Không có công việc phù hợp</h2>
+      <p>Thử thay đổi từ khóa hoặc bộ lọc.</p>
+    </div>
+  <% } else { %>
+    <div class="table-wrap">
+      <table class="issue-table">
+        <thead>
+          <tr>
+            <th scope="col">Mã</th>
+            <th scope="col">Tiêu đề</th>
+            <th scope="col">Trạng thái</th>
+            <th scope="col">Ưu tiên</th>
+            <th scope="col">Hạn</th>
+            <th scope="col">Cập nhật</th>
+            <th scope="col"><span class="sr-only">Người thực hiện</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% tasks.forEach(task => { %>
+            <tr class="<%= task.status === 'COMPLETED' ? 'is-done' : '' %>">
+              <td class="cell-key"><span class="issue-type" aria-hidden="true">✓</span><a href="/tasks/<%= task.id %>"><%= taskKey(task.id) %></a></td>
+              <td class="cell-title"><a href="/tasks/<%= task.id %>"><%= task.title %></a></td>
+              <td>
+                <form method="POST" action="/tasks/<%= task.id %>/status?_method=PATCH" class="status-form">
+                  <input type="hidden" name="redirectTo" value="<%= backUrl %>">
+                  <select name="status" class="lozenge-select lozenge-<%= task.status.toLowerCase() %>" aria-label="Trạng thái của <%= taskKey(task.id) %>" data-autosubmit>
+                    <% Object.entries(STATUS_LABELS).forEach(([key, label]) => { %>
+                      <option value="<%= key %>" <%= task.status === key ? 'selected' : '' %>><%= label %></option>
+                    <% }) %>
+                  </select>
+                  <noscript><button class="btn btn-subtle btn-small" type="submit">Lưu</button></noscript>
+                </form>
+              </td>
+              <td><%- include('../partials/priority', { priority: task.priority, showLabel: true }) %></td>
+              <td>
+                <% if (task.due_date) { %>
+                  <span class="due <%= task.is_overdue ? 'is-overdue' : '' %>"><%= formatDate(task.due_date) %></span>
+                <% } else { %><span class="muted">—</span><% } %>
+              </td>
+              <td class="muted"><%= formatDate(task.updated_at) %></td>
+              <td><span class="avatar avatar-sm" title="<%= currentUser.name %>"><%= initials(currentUser.name) %></span></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
     </div>
   <% } %>
-
-  <% tasks.forEach(task => { %>
-    <article class="task-card <%= task.status === 'COMPLETED' ? 'task-done' : '' %>">
-      <div class="task-main">
-        <div class="task-badges">
-          <span class="badge status-<%= task.status.toLowerCase() %>">
-            <%= task.status === 'TODO' ? 'Chưa làm' : task.status === 'IN_PROGRESS' ? 'Đang làm' : 'Hoàn thành' %>
-          </span>
-          <span class="badge priority-<%= task.priority.toLowerCase() %>">
-            Ưu tiên <%= task.priority === 'HIGH' ? 'cao' : task.priority === 'MEDIUM' ? 'trung bình' : 'thấp' %>
-          </span>
-          <% if (task.is_overdue) { %><span class="badge overdue">Quá hạn</span><% } %>
+<% } else { %>
+  <p class="board-hint">Kéo thả thẻ giữa các cột để đổi trạng thái.</p>
+  <div class="board" data-board>
+    <% columns.forEach(column => { %>
+      <section class="column" data-status="<%= column.key %>" aria-label="<%= STATUS_LABELS[column.key] %>">
+        <header class="column-header">
+          <h2><%= STATUS_LABELS[column.key] %></h2>
+          <span class="column-count" data-count><%= column.tasks.length %></span>
+          <% if (column.key === 'COMPLETED') { %><span class="column-done" aria-hidden="true">✓</span><% } %>
+        </header>
+        <div class="column-body" data-dropzone>
+          <% column.tasks.forEach(task => { %>
+            <article class="card" draggable="true" data-id="<%= task.id %>">
+              <a class="card-title" draggable="false" href="/tasks/<%= task.id %>"><%= task.title %></a>
+              <% if (task.due_date) { %>
+                <span class="due <%= task.is_past_due ? 'is-overdue' : '' %>">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>
+                  <%= formatDate(task.due_date) %>
+                </span>
+              <% } %>
+              <footer class="card-footer">
+                <span class="card-meta">
+                  <span class="issue-type" aria-hidden="true">✓</span>
+                  <span class="card-key"><%= taskKey(task.id) %></span>
+                </span>
+                <span class="card-meta">
+                  <%- include('../partials/priority', { priority: task.priority }) %>
+                  <span class="avatar avatar-sm" title="<%= currentUser.name %>"><%= initials(currentUser.name) %></span>
+                </span>
+              </footer>
+              <form method="POST" action="/tasks/<%= task.id %>/status?_method=PATCH" class="card-move">
+                <input type="hidden" name="redirectTo" value="<%= backUrl %>">
+                <label class="sr-only" for="move-<%= task.id %>">Chuyển <%= taskKey(task.id) %> sang</label>
+                <select id="move-<%= task.id %>" name="status" data-autosubmit data-card-status>
+                  <% Object.entries(STATUS_LABELS).forEach(([key, label]) => { %>
+                    <option value="<%= key %>" <%= task.status === key ? 'selected' : '' %>><%= label %></option>
+                  <% }) %>
+                </select>
+                <noscript><button class="btn btn-subtle btn-small" type="submit">Lưu</button></noscript>
+              </form>
+            </article>
+          <% }) %>
+          <% if (!column.tasks.length) { %><p class="column-empty" data-empty>Không có công việc</p><% } %>
         </div>
-        <h2><a href="/tasks/<%= task.id %>"><%= task.title %></a></h2>
-        <% if (task.description) { %><p><%= task.description.length > 150 ? task.description.slice(0, 150) + '…' : task.description %></p><% } %>
-        <span class="due-date"><%= task.due_date ? `Hạn: ${task.due_date.split('-').reverse().join('/')}` : 'Không có hạn' %></span>
-      </div>
-      <div class="task-actions">
-        <% if (task.status !== 'COMPLETED') { %>
-          <form method="POST" action="/tasks/<%= task.id %>/status?_method=PATCH">
-            <input type="hidden" name="status" value="<%= task.status === 'TODO' ? 'IN_PROGRESS' : 'COMPLETED' %>">
-            <button type="submit" class="btn btn-small btn-secondary"><%= task.status === 'TODO' ? 'Bắt đầu' : 'Hoàn thành' %></button>
-          </form>
+        <% if (column.key === 'TODO') { %>
+          <a class="column-add" href="/tasks/new">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Tạo công việc
+          </a>
         <% } %>
-        <a href="/tasks/<%= task.id %>/edit" class="btn btn-small btn-ghost">Sửa</a>
-      </div>
-    </article>
-  <% }) %>
-</section>
+      </section>
+    <% }) %>
+  </div>
+<% } %>
 <%- include('../partials/footer') %>
